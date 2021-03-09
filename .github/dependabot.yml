@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - package-ecosystem: "maven"
+    directory: "/cache-ahead"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+  - package-ecosystem: "maven"
+    directory: "/cache"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+  - package-ecosystem: "pip"
+    directory: "/app"
+    schedule:
+      interval: "weekly"
+      day: "thursday"

@@ -1,0 +1,10 @@
+click==8.0.1
+Flask==2.0.1
+Flask-SQLAlchemy==2.5.1
+hazelcast-python-client==4.2
+itsdangerous==2.0.1
+Jinja2==3.0.1
+jsonpickle==2.0.0
+MarkupSafe==2.0.1
+SQLAlchemy==1.4.22
+Werkzeug==2.0.1
