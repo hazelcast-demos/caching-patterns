@@ -1,0 +1,7 @@
+venv
+.idea
+__pycache__
+*.iml
+target
+.java-version
+demo.sqlite
