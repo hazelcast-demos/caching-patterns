@@ -1,43 +1,61 @@
+import json
 from datetime import datetime
 from json import JSONEncoder
+from logging import basicConfig, INFO
 
 from flask import Flask, jsonify, request, Response
 from flask_sqlalchemy import SQLAlchemy
+from hazelcast import HazelcastClient
 
 
 class PersonEncoder(JSONEncoder):
     def default(self, o):
         if type(o) is Person:
-            json = {
+            new_json = {
                 'id': o.id,
                 'first_name': o.first_name,
                 'last_name': o.last_name,
             }
             if o.birthdate is not None:
-                json['birthdate'] = o.birthdate.isoformat()
-            return json
+                new_json['birthdate'] = o.birthdate.isoformat()
+            return new_json
         else:
             return JSONEncoder.default(self, o)
 
 
 app = Flask(__name__)
+basicConfig(level=INFO)
 app.config['JSON_SORT_KEYS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../demo.sqlite'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json_encoder = PersonEncoder
 db = SQLAlchemy(app)
+client = HazelcastClient()
+cache = client.get_map("persons").blocking()
 
 
 @app.route('/')
 def get_all():
     persons = Person.query.all()
+    for person in persons:
+        cache.set(person.id, jsonify(person))
+        app.logger.info('Person with PK %s set in cache', person.id)
     return jsonify(persons)
 
 
 @app.route('/<pk>')
 def get_one(pk):
-    persons = Person.query.get(int(pk))
-    return jsonify(persons)
+    pk = int(pk)
+    if cache.contains_key(pk):
+        app.logger.info('Person with PK %s found in cache', pk)
+        return cache.get(pk)
+    else:
+        app.logger.info('Person with PK %s not found in cache', pk)
+        person = Person.query.get(pk)
+        person = jsonify(person)
+        cache.set(pk, person)
+        app.logger.info('Person with PK %s set in cache', pk)
+        return person
 
 
 @app.route('/', methods=['POST'])
@@ -46,7 +64,10 @@ def post():
     person = Person(first_name=data['first_name'], last_name=data['last_name'])
     db.session.add(person)
     db.session.commit()
-    return Response(status=201, headers={'Location': f'{request.url}{person.id}'})
+    key = person.id
+    cache.set(key, json.dumps(person, cls=PersonEncoder, indent=4))
+    app.logger.info('Person with PK %s set in cache', key)
+    return Response(status=201, headers={'Location': f'{request.url}{key}'})
 
 
 class Person(db.Model):
