@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           https://www.hazelcast.com/schema/config/hazelcast-config-5.0.xsd">
+    <map name="persons">
+        <map-store initial-mode="EAGER">
+            <class-name>org.hazelcast.cache.SqlMapLoader</class-name>
+            <properties>
+                <property name="jdbc.url">jdbc:sqlite:./demo.sqlite</property>
+            </properties>
+        </map-store>
+    </map>
+</hazelcast>

@@ -36,26 +36,17 @@ cache = client.get_map("persons").blocking()
 
 @app.route('/')
 def get_all():
-    persons = Person.query.all()
-    for person in persons:
-        cache.set(person.id, jsonify(person))
-        app.logger.info('Person with PK %s set in cache', person.id)
-    return jsonify(persons)
+    persons = cache.entry_set()
+    return jsonify([json.loads(person) for key, person in persons])
 
 
 @app.route('/<pk>')
 def get_one(pk):
-    pk = int(pk)
-    if cache.contains_key(pk):
-        app.logger.info('Person with PK %s found in cache', pk)
-        return cache.get(pk)
-    else:
-        app.logger.info('Person with PK %s not found in cache', pk)
-        person = Person.query.get(pk)
-        person = jsonify(person)
-        cache.set(pk, person)
-        app.logger.info('Person with PK %s set in cache', pk)
+    person = cache.get(int(pk))
+    if person is not None:
         return person
+    else:
+        return Response(status=404)
 
 
 @app.route('/', methods=['POST'])
