@@ -5,7 +5,7 @@
            https://www.hazelcast.com/schema/config/hazelcast-config-4.2.xsd">
     <map name="persons">
         <map-store initial-mode="EAGER">
-            <class-name>org.hazelcast.cache.SqlMapLoader</class-name>
+            <class-name>org.hazelcast.cache.SqlMapStore</class-name>
             <properties>
                 <property name="jdbc.url">jdbc:sqlite:./demo.sqlite</property>
             </properties>
