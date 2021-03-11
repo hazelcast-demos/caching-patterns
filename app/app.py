@@ -52,12 +52,8 @@ def get_one(pk):
 @app.route('/', methods=['POST'])
 def post():
     data = request.get_json()
-    person = Person(first_name=data['first_name'], last_name=data['last_name'])
-    db.session.add(person)
-    db.session.commit()
-    key = person.id
-    cache.set(key, json.dumps(person, cls=PersonEncoder, indent=4))
-    app.logger.info('Person with PK %s set in cache', key)
+    key = data['id']
+    cache.set(key, json.dumps(data, indent=4))
     return Response(status=201, headers={'Location': f'{request.url}{key}'})
 
 

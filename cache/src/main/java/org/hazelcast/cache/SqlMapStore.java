@@ -3,6 +3,7 @@ package org.hazelcast.cache;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.MapLoaderLifecycleSupport;
+import com.hazelcast.map.MapStore;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.json.JSONObject;
@@ -14,9 +15,9 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class SqlMapLoader implements MapLoader<Integer, String>, MapLoaderLifecycleSupport {
+public class SqlMapStore implements MapLoader<Integer, String>, MapStore<Integer, String>, MapLoaderLifecycleSupport {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SqlMapLoader.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SqlMapStore.class);
     private HikariDataSource dataSource;
 
     public String load(Integer key) {
@@ -83,6 +84,71 @@ public class SqlMapLoader implements MapLoader<Integer, String>, MapLoaderLifecy
 
     public void destroy() {
         dataSource.close();
+    }
+
+    @Override
+    public void store(Integer key, String value) {
+        try (var connection = dataSource.getConnection()) {
+            var json = new JSONObject(value);
+            var birthdate = json.has("birthdate") ? json.getString("birthdate") : null;
+            var firstName = json.getString("first_name");
+            var lastName = json.getString("last_name");
+            var sqlBuilder = new StringBuilder();
+            sqlBuilder.append("INSERT INTO Person(id, first_name, last_name");
+            if (birthdate != null) {
+                sqlBuilder.append(", birthdate");
+            }
+            sqlBuilder.append(") VALUES (?, ?, ?");
+            if (birthdate != null) {
+                sqlBuilder.append(", ?");
+            }
+            sqlBuilder.append(")");
+            var statement = connection.prepareStatement(sqlBuilder.toString());
+            statement.setInt(1, key);
+            statement.setString(2, firstName);
+            statement.setString(3, lastName);
+            if (birthdate != null) {
+                statement.setString(4, birthdate);
+            }
+            statement.execute();
+            statement.close();
+            LOGGER.info("Person with pk {} has been written in the store", key);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void storeAll(Map<Integer, String> map) {
+        // TODO I'm too lazy to implement this now
+        // And it's not used by the demo anyway
+    }
+
+    @Override
+    public void delete(Integer key) {
+        try (var connection = dataSource.getConnection();
+             var statement =
+                     connection.prepareStatement("DELETE FROM Person WHERE id=?")) {
+            statement.setInt(1, key);
+            statement.execute();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void deleteAll(Collection<Integer> keys) {
+        try (var connection = dataSource.getConnection();
+             var statement =
+                     connection.prepareStatement("DELETE FROM Person WHERE id IN (SELECT ?)")) {
+            var selectIn = keys.stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(", "));
+            statement.setString(1, selectIn);
+            statement.execute();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private String toString(ResultSet resultSet) throws SQLException {
