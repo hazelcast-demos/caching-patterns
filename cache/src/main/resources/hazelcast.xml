@@ -6,6 +6,7 @@
     <map name="persons">
         <map-store initial-mode="EAGER">
             <class-name>org.hazelcast.cache.SqlMapStore</class-name>
+            <write-delay-seconds>20</write-delay-seconds>
             <properties>
                 <property name="jdbc.url">jdbc:sqlite:./demo.sqlite</property>
             </properties>
