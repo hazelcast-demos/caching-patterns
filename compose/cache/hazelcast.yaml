@@ -1,0 +1,4 @@
+hazelcast:
+  map:
+    person:
+      statistics-enabled: true
