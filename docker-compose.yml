@@ -1,0 +1,46 @@
+version: '3'
+services:
+  cache:
+    container_name: cache-patterns-cache
+    image: hazelcast/hazelcast:4.2.1
+    environment:
+      JAVA_OPTS: -Dhazelcast.config=/etc/hazelcast/hazelcast.yaml
+    volumes:
+      - ./compose/cache:/etc/hazelcast
+    ports:
+      - "5701:5701"
+  app:
+    container_name: cache-patterns-app
+    build:
+      context: app
+    environment:
+      DATABASE_URI: mysql+mysqlconnector://root:root@database:3306/store
+      CLUSTER_HOST: cache
+    ports:
+      - "5000:5000"
+    depends_on:
+      - cache
+  pipeline:
+    container_name: cache-patterns-ahead
+    build:
+      context: cache-ahead
+    environment:
+      MYSQL_HOST: database
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      DATABASE_SCHEMA: store
+      CACHE_HOST: cache
+      WAIT_TIME: 12000
+    depends_on:
+      - database
+      - cache
+  database:
+    container_name: cache-patterns-datastore
+    image: mysql:8.0
+    command: mysqld --log-bin=ON --binlog_format=ROW --server-id=1 --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./compose/database:/docker-entrypoint-initdb.d
