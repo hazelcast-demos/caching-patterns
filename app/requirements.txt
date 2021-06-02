@@ -1,5 +1,5 @@
 click==8.0.1
-Flask==1.1.2
+Flask==2.0.1
 Flask-SQLAlchemy==2.5.1
 hazelcast-python-client==4.1
 itsdangerous==1.1.0
