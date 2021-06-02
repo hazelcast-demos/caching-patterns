@@ -5,6 +5,6 @@ hazelcast-python-client==4.1
 itsdangerous==1.1.0
 Jinja2==3.0.1
 jsonpickle==2.0.0
-MarkupSafe==1.1.1
+MarkupSafe==2.0.1
 SQLAlchemy==1.4.17
 Werkzeug==1.0.1
