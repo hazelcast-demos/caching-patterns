@@ -1,4 +1,4 @@
-click==7.1.2
+click==8.0.1
 Flask==1.1.2
 Flask-SQLAlchemy==2.5.1
 hazelcast-python-client==4.1
